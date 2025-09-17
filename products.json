@@ -1,0 +1,35 @@
+[
+  {
+    "title": "Classic Tote Bag",
+    "description": "High-quality cotton tote bag.",
+    "category": "Tote Bag",
+    "imageUrl": "tote1.jpg",
+    "inStock": true,
+    "originalPrice": 599,
+    "discountedPrice": 499
+  },
+  {
+    "title": "Hoodie Comfort XL",
+    "description": "Warm and comfy hoodie.",
+    "category": "Hoodie",
+    "imageUrl": "hoodie1.jpg",
+    "inStock": true,
+    "sizes": [
+      { "size": "S", "originalPrice": 899, "discountedPrice": 799, "inStock": true },
+      { "size": "M", "originalPrice": 949, "discountedPrice": 849, "inStock": true },
+      { "size": "L", "originalPrice": 999, "discountedPrice": 899, "inStock": true }
+    ]
+  },
+  {
+    "title": "Hoodie Cozy Fit",
+    "description": "Stylish hoodie for daily wear.",
+    "category": "Hoodie",
+    "imageUrl": "hoodie1.jpg",
+    "inStock": true,
+    "sizes": [
+      { "size": "M", "originalPrice": 999, "discountedPrice": 899, "inStock": true },
+      { "size": "L", "originalPrice": 1049, "discountedPrice": 949, "inStock": true },
+      { "size": "XL", "originalPrice": 1099, "discountedPrice": 999, "inStock": true }
+    ]
+  }
+]
