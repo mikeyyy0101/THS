@@ -7,7 +7,7 @@ import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 
 const app = express();
-app.use(cors());
+app.use(cors({origin:"*"}));
 app.use(express.json());
 
 // Routes
