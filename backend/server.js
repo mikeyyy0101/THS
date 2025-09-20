@@ -14,6 +14,8 @@ app.use(express.json());
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 
+// Connect to MongoDB Atlas
+console.log("Connecting to MongoDB at:", process.env.MONGO_URI);
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
