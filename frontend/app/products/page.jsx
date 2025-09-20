@@ -7,6 +7,8 @@ import Header from "../components/HeaderShop";
 import { useRouter } from "next/navigation";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSelector } from "react-redux";
+import DebugUser from "@/debugger/debug";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -14,6 +16,7 @@ export default function ProductsPage() {
   const [filter, setFilter] = useState("All");
   const [selectedSizes, setSelectedSizes] = useState({}); // Track size per product
   const router = useRouter();
+  const currentUser = useSelector((state) => state.auth.currentUser);
 
   // Fetch products from backend
   useEffect(() => {
@@ -38,18 +41,33 @@ export default function ProductsPage() {
   });
 
   // Add to cart handler
-  const handleAddToCart = async (productId, size) => {
-    try {
-      await fetch("http://localhost:5000/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, size }),
-      });
-      toast.success("Added to Cart!", { autoClose: 1500 });
-    } catch (err) {
-      toast.error("Failed to add to cart");
-    }
-  };
+// Add to cart handler
+const handleAddToCart = async (productId, size) => {
+  if (!currentUser?.uid) {
+    return toast.error("❌ Please login to add items to cart");
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: currentUser.uid, // ✅ include userId
+        productId,
+        size,
+        quantity: 1,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to add to cart");
+
+    toast.success("✅ Added to Cart!", { autoClose: 1500 });
+  } catch (err) {
+    console.error("❌ Add to cart error:", err);
+    toast.error("Failed to add to cart");
+  }
+};
+
 
   if (loading) {
     return (
@@ -217,6 +235,7 @@ export default function ProductsPage() {
 
       <Footer />
       <ToastContainer />
+      <DebugUser />
     </div>
   );
 }

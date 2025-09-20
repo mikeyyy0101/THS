@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";  
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import FirebaseAuthSync from "@/firebaseAuthSync/firebaseAuthSync";
 
 export default function Home() {
   return (
@@ -89,6 +90,7 @@ export default function Home() {
 
       {/* Footer Component */}
       <Footer />
+      <FirebaseAuthSync />
     </div>
   );
 }

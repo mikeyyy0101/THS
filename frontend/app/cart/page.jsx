@@ -4,34 +4,47 @@ import Image from "next/image";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Header from "../components/HeaderShop";
+import { useSelector } from "react-redux";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 export default function CartPage() {
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Replace with real logged-in user ID from auth
-  const userId = "YOUR_REAL_USER_ID";
+  const currentUser = useSelector((state) => state.auth.currentUser);
+  // if not logged in, you can show guest cart or ask to login
+  const userId = currentUser?.uid || null;
 
-  // Fetch cart
   useEffect(() => {
+    if (!userId) {
+      setCart([]);
+      setLoading(false);
+      return;
+    }
+
     async function fetchCart() {
+      setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/cart/${userId}`);
-        const data = await res.json();
-        setCart(data); // data = array of items
+        const res = await fetch(`${API_BASE}/api/cart/${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error("Failed to fetch cart");
+        const data = await res.json(); // array of { productId, size, quantity, product }
+        setCart(data);
       } catch (err) {
         console.error("Error fetching cart:", err);
+        toast.error("Cannot fetch cart");
       } finally {
         setLoading(false);
       }
     }
+
     fetchCart();
   }, [userId]);
 
-  // Remove item from cart
   const handleRemove = async (productId, size) => {
+    if (!userId) return toast.error("Please login to manage cart");
     try {
-      const res = await fetch("http://localhost:5000/api/cart/remove", {
+      const res = await fetch(`${API_BASE}/api/cart/remove`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, productId, size }),
@@ -41,7 +54,6 @@ export default function CartPage() {
 
       const updatedItems = await res.json();
       setCart(updatedItems);
-
       toast.success("Item removed from cart", { autoClose: 1500 });
     } catch (err) {
       console.error(err);
@@ -74,16 +86,14 @@ export default function CartPage() {
         ) : (
           <ul className="space-y-4">
             {cart.map((item, i) => {
-              const product = item.productId;
+              const product = item.product;
               if (!product) return null;
 
-              // ✅ Show only discounted price for hoodies
+              // Price logic same as before
               const priceToShow =
                 product.category?.toLowerCase() === "hoodie"
-                  ? product.sizes?.find((s) => s.size === item.size)?.discountedPrice ??
-                    product.discountedPrice ??
-                    product.originalPrice
-                  : product.discountedPrice ?? product.originalPrice ?? product.price;
+                  ? (product.sizes?.find((s) => s.size === item.size)?.discountedPrice ?? product.discountedPrice ?? product.originalPrice)
+                  : (product.discountedPrice ?? product.originalPrice ?? product.price);
 
               return (
                 <li
@@ -93,11 +103,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-4">
                     <div className="relative w-16 h-16 flex-shrink-0">
                       <Image
-                        src={
-                          product.imageUrl?.startsWith("http")
-                            ? product.imageUrl
-                            : `/${product.imageUrl}`
-                        }
+                        src={product.imageUrl?.startsWith("http") ? product.imageUrl : `/${product.imageUrl}`}
                         alt={product.title || "Product"}
                         fill
                         className="object-cover rounded-md border"
@@ -115,7 +121,7 @@ export default function CartPage() {
                   </div>
 
                   <button
-                    onClick={() => handleRemove(String(product._id), item.size)}
+                    onClick={() => handleRemove(String(item.productId), item.size)}
                     className="px-4 py-2 rounded-lg font-semibold shadow-md bg-red-500 text-white cursor-pointer hover:bg-red-600 transition"
                   >
                     Remove

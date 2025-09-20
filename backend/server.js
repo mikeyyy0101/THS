@@ -1,10 +1,11 @@
 import dotenv from "dotenv";
-dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import productRoutes from "./routes/productRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
+
+dotenv.config();
 
 const app = express();
 app.use(cors({ origin: "*" }));
