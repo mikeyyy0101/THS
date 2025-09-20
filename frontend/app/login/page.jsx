@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../firebase/firebase.js";
+import { signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { auth } from "../firebase/firebase.js"; // ✅ Use single auth instance
 import { useSelector, useDispatch } from "react-redux";
 import { setCurrentUser } from "../redux/slices/authSlice.js";
 import { FcGoogle } from "react-icons/fc";
@@ -14,6 +14,14 @@ export default function Login() {
   const dispatch = useDispatch();
   const router = useRouter();
 
+  // ✅ Only run once to set persistence
+  useEffect(() => {
+    setPersistence(auth, browserLocalPersistence).catch((error) =>
+      console.error("Persistence setup failed:", error)
+    );
+  }, []);
+
+  // ✅ Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
       router.push("/");
@@ -35,10 +43,14 @@ export default function Login() {
 
       dispatch(setCurrentUser(simplifiedUser));
       localStorage.setItem("user", JSON.stringify(simplifiedUser));
-
       router.push("/");
     } catch (error) {
       console.error("Google Sign-In Error:", error);
+
+      // ✅ fallback for production SSR environments
+      if (error.code === "auth/operation-not-supported-in-this-environment") {
+        await signInWithRedirect(auth, provider);
+      }
     }
   };
 

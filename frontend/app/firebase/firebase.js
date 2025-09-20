@@ -1,6 +1,6 @@
-"use client"; // ensures this file only runs in browser
+"use client"; // ensures this runs only in browser
 
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,9 +13,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase app
-const app = initializeApp(firebaseConfig);
-console.log("Firebase API Key:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+// ✅ Avoid re-initializing Firebase (important for Next.js hot reload / SSR)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Export auth only (analytics can be optional)
 export const auth = getAuth(app);
