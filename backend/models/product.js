@@ -18,4 +18,4 @@ const productSchema = new mongoose.Schema({
   inStock: { type: Boolean, default: true },
 });
 
-export default mongoose.models.Product || mongoose.model("Product", productSchema);
+export default mongoose.models.Product || mongoose.model("products", productSchema);
