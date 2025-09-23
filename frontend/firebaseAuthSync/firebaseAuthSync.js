@@ -10,14 +10,14 @@ export default function FirebaseAuthSync() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log("✅ Firebase logged in user:", user.uid, user.email);
+        console.log("Firebase logged in user:", user.uid, user.email);
         dispatch(setCurrentUser({
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
         }));
       } else {
-        console.log("⚠️ Firebase user logged out");
+        console.log("Firebase user logged out");
         dispatch(setCurrentUser(null));
       }
     });

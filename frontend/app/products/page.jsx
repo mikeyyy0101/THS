@@ -17,6 +17,7 @@ export default function ProductsPage() {
   const [selectedSizes, setSelectedSizes] = useState({}); // Track size per product
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.currentUser);
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
   // Fetch products from backend
   useEffect(() => {
@@ -43,20 +44,20 @@ export default function ProductsPage() {
   // Add to cart handler
 // Add to cart handler
 const handleAddToCart = async (productId, size) => {
-  if (!currentUser?.uid) {
+  if (!currentUser) {
     return toast.error("❌ Please login to add items to cart");
   }
 
   try {
-    const res = await fetch("http://localhost:5000/api/cart", {
+    const token = await currentUser.getIdToken(); // Firebase token
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/api/cart/add`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: currentUser.uid, // ✅ include userId
-        productId,
-        size,
-        quantity: 1,
-      }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // ✅ send token
+      },
+      body: JSON.stringify({ productId, size, quantity: 1 }), // ❌ do NOT send userId
     });
 
     if (!res.ok) throw new Error("Failed to add to cart");
@@ -67,6 +68,8 @@ const handleAddToCart = async (productId, size) => {
     toast.error("Failed to add to cart");
   }
 };
+
+
 
 
   if (loading) {
@@ -168,7 +171,7 @@ const handleAddToCart = async (productId, size) => {
                     >
                       {product.sizes.map((s) => (
                         <option key={s.size} value={s.size}>
-                          {s.size} – ₹{s.discountedPrice}
+                          {s.size}
                         </option>
                       ))}
                     </select>
@@ -221,7 +224,7 @@ const handleAddToCart = async (productId, size) => {
                   {/* View Product Button */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
-                    onClick={() => router.push(`/product/${product._id}`)}
+                    onClick={() => router.push(`/viewProduct/${product._id}`)}
                     className="mt-3 px-5 py-2 rounded-full font-semibold shadow-md bg-white border border-gray-300 text-gray-700 hover:bg-pink-50 transition"
                   >
                     View Product

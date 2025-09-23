@@ -8,20 +8,23 @@ import mongoose from "mongoose";
  */
 export const addToCart = async (req, res) => {
   try {
-    const { userId, productId, size, quantity = 1 } = req.body;
-    if (!userId || !productId) return res.status(400).json({ error: "Missing userId or productId" });
+    const userId = req.user.id; // ✅ get from verified token
+    const { productId, size, quantity = 1 } = req.body;
 
-    // validate productId
-    if (!mongoose.isValidObjectId(productId)) return res.status(400).json({ error: "Invalid productId" });
+    if (!productId) return res.status(400).json({ error: "Missing productId" });
+
+    if (!mongoose.isValidObjectId(productId))
+      return res.status(400).json({ error: "Invalid productId" });
 
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
       cart = new Cart({ userId, items: [{ productId, size, quantity }] });
     } else {
-      // check if same productId+size exists
       const idx = cart.items.findIndex(
-        (it) => String(it.productId) === String(productId) && String(it.size || "") === String(size || "")
+        (it) =>
+          String(it.productId) === String(productId) &&
+          String(it.size || "") === String(size || "")
       );
 
       if (idx > -1) {
@@ -33,70 +36,75 @@ export const addToCart = async (req, res) => {
 
     await cart.save();
 
-    // Return populated items
     const populated = await Cart.findOne({ userId }).lean();
-    // populate manually to ensure product fields
-    const detailed = await Promise.all(populated.items.map(async (it) => {
-      const p = await Product.findById(it.productId).lean();
-      return { ...it, product: p };
-    }));
+    const detailed = await Promise.all(
+      populated.items.map(async (it) => {
+        const p = await Product.findById(it.productId).lean();
+        return { ...it, product: p };
+      })
+    );
 
     return res.json({ items: detailed });
   } catch (err) {
-    console.error(err);
+    console.error("Add to cart error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };
 
 /**
- * Get cart by userId: returns array of items with product details
+ * Get cart by userId
  */
 export const getCart = async (req, res) => {
   try {
-    const { userId } = req.params;
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
+    const userId = req.user.id; // ✅ from token
 
     const cart = await Cart.findOne({ userId }).lean();
     if (!cart) return res.json([]);
 
-    const detailed = await Promise.all(cart.items.map(async (it) => {
-      const p = await Product.findById(it.productId).lean();
-      return { ...it, product: p };
-    }));
+    const detailed = await Promise.all(
+      cart.items.map(async (it) => {
+        const p = await Product.findById(it.productId).lean();
+        return { ...it, product: p };
+      })
+    );
 
     return res.json(detailed);
   } catch (err) {
-    console.error(err);
+    console.error("Get cart error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };
 
 /**
- * Remove item from cart: expects { userId, productId, size } in body
- * If quantity > 1 you may choose to decrement. Here we remove the item entirely.
+ * Remove item from cart
  */
 export const removeFromCart = async (req, res) => {
   try {
-    const { userId, productId, size } = req.body;
-    if (!userId || !productId) return res.status(400).json({ error: "Missing params" });
+    const userId = req.user.id; // ✅ from token
+    const { productId, size } = req.body;
+
+    if (!productId) return res.status(400).json({ error: "Missing productId" });
 
     const cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ error: "Cart not found" });
 
     cart.items = cart.items.filter(
-      (it) => !(String(it.productId) === String(productId) && String(it.size || "") === String(size || ""))
+      (it) =>
+        !(String(it.productId) === String(productId) && String(it.size || "") === String(size || ""))
     );
 
     await cart.save();
 
-    const detailed = await Promise.all(cart.items.map(async (it) => {
-      const p = await Product.findById(it.productId).lean();
-      return { ...it, product: p };
-    }));
+    const detailed = await Promise.all(
+      cart.items.map(async (it) => {
+        const p = await Product.findById(it.productId).lean();
+        return { ...it, product: p };
+      })
+    );
 
     return res.json(detailed);
   } catch (err) {
-    console.error(err);
+    console.error("Remove from cart error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 };

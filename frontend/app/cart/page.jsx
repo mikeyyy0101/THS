@@ -16,50 +16,68 @@ export default function CartPage() {
   // if not logged in, you can show guest cart or ask to login
   const userId = currentUser?.uid || null;
 
-  useEffect(() => {
-    if (!userId) {
-      setCart([]);
-      setLoading(false);
-      return;
-    }
+ useEffect(() => {
+  if (!currentUser) {
+    setCart([]);
+    setLoading(false);
+    return;
+  }
 
-    async function fetchCart() {
-      setLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/api/cart/${encodeURIComponent(userId)}`);
-        if (!res.ok) throw new Error("Failed to fetch cart");
-        const data = await res.json(); // array of { productId, size, quantity, product }
-        setCart(data);
-      } catch (err) {
-        console.error("Error fetching cart:", err);
-        toast.error("Cannot fetch cart");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchCart();
-  }, [userId]);
-
-  const handleRemove = async (productId, size) => {
-    if (!userId) return toast.error("Please login to manage cart");
+  async function fetchCart() {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/cart/remove`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, productId, size }),
+      const token = await currentUser.getIdToken();
+
+      const res = await fetch(`${API_BASE}/api/cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (!res.ok) throw new Error("Failed to remove item");
+      if (!res.ok) throw new Error("Failed to fetch cart");
 
-      const updatedItems = await res.json();
-      setCart(updatedItems);
-      toast.success("Item removed from cart", { autoClose: 1500 });
+      const data = await res.json();
+      setCart(data);
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to remove item");
+      console.error("Error fetching cart:", err);
+      toast.error("Cannot fetch cart");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
+
+  fetchCart();
+}, [currentUser]);
+
+
+const handleAddToCart = async (productId, size) => {
+  if (!currentUser) return toast.error("❌ Please login to add items to cart");
+
+  try {
+    // Get Firebase ID token
+    const token = await currentUser.getIdToken();
+
+    const res = await fetch(`${API_BASE}/api/cart/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // send token
+      },
+      body: JSON.stringify({ productId, size, quantity: 1 }), // NO userId
+    });
+
+    const data = await res.json();
+    console.log("Add to cart response:", data);
+
+    if (!res.ok) throw new Error(data?.error || "Failed to add to cart");
+
+    toast.success("✅ Added to Cart!", { autoClose: 1500 });
+  } catch (err) {
+    console.error("❌ Add to cart error:", err);
+    toast.error(err.message || "Failed to add to cart");
+  }
+};
+
 
   if (loading) {
     return (
